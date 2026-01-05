@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>droid-chat</title>
+    <style>
+        :root {
+            --bg: #121212; --header: #1f1f1f; --msg-own: #005c4b; --msg-remote: #202c33;
+            --accent: #00e5ff; --tripio: #ff00ff; --cal-btn: #ff9800; --stop-btn: #ff3d00; --text: #e9edef; --gray: #8696a0;
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+
+        /* HEADER */
+        header { background: var(--header); padding: 0 10px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; height: 50px; flex: 0 0 50px; z-index: 10; }
+        .indicators { display: flex; gap: 4px; }
+        .dot { width: 12px; height: 12px; border-radius: 50%; border: 1px solid #555; font-size: 8px; display: flex; align-items: center; justify-content: center; color: #000; font-weight: bold; }
+        .header-right { display: flex; align-items: center; gap: 8px; }
+        .btn-menu { background: none; border: none; color: var(--text); font-size: 24px; cursor: pointer; padding: 0 5px; }
+        
+        /* Buttons */
+        .btn-cal-small { background: #333; color: var(--accent); border: 1px solid #555; border-radius: 4px; font-size: 10px; padding: 5px 8px; cursor: pointer; text-transform: uppercase; font-weight: bold; min-width: 60px; }
+        .btn-cal-small:active { background: var(--accent); color: #000; }
+        
+        /* MODE TOGGLE BUTTON */
+        .btn-mode { background: #333; color: #fff; border: 1px solid #555; border-radius: 4px; font-size: 10px; padding: 5px 8px; cursor: pointer; text-transform: uppercase; font-weight: bold; min-width: 60px; transition: 0.3s; }
+        .mode-r2d2 { color: var(--accent); border-color: var(--accent); box-shadow: 0 0 5px rgba(0,229,255,0.3); }
+        .mode-tripio { color: var(--tripio); border-color: var(--tripio); box-shadow: 0 0 5px rgba(255,0,255,0.3); }
+
+        .cal-recording { background: var(--stop-btn) !important; color: #fff !important; border-color: #fff !important; animation: pulse-red 1s infinite; }
+        .cal-sending { background: var(--cal-btn) !important; color: #000 !important; }
+        @keyframes pulse-red { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        
+        /* COLORS */
+        .code-0 { background: #ff0055; box-shadow: 0 0 5px #ff0055; } .code-1 { background: #00e5ff; box-shadow: 0 0 5px #00e5ff; } 
+        .code-2 { background: #880022; color: #fff; } .code-3 { background: #007788; color: #fff; } 
+
+        /* SCOPE */
+        .scope-container { background: #000; position: relative; border-bottom: 1px solid #333; flex: 0 0 80px; }
+        canvas { width: 100%; height: 80px; display: block; }
+        .scope-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; padding: 5px; display: flex; flex-direction: column; justify-content: space-between; }
+        .status-text { font-size: 10px; color: var(--accent); font-family: monospace; text-shadow: 1px 1px 2px #000; }
+        .thresh-wrapper { position: absolute; bottom: 5px; right: 5px; width: 40%; pointer-events: auto; display: flex; align-items: center; gap: 5px; }
+        .thresh-wrapper input { flex: 1; height: 4px; accent-color: var(--accent); }
+        .thresh-val { font-size: 10px; color: #aaa; min-width: 35px; text-align: right; }
+
+        /* CHAT */
+        #chatWindow { flex: 1 1 auto; overflow-y: auto; min-height: 0; padding: 10px; display: flex; flex-direction: column; gap: 8px; background-image: radial-gradient(#222 1px, transparent 1px); background-size: 20px 20px; }
+        .msg { display: flex; align-items: flex-end; gap: 5px; max-width: 80%; }
+        .msg.own { align-self: flex-end; flex-direction: row-reverse; } .msg.remote { align-self: flex-start; }
+        .bubble { padding: 8px 12px; border-radius: 12px; font-size: 15px; position: relative; line-height: 1.4; word-wrap: break-word; overflow-wrap: break-word; word-break: break-word; white-space: pre-wrap; }
+        .msg.own .bubble { background: var(--msg-own); border-bottom-right-radius: 2px; } .msg.remote .bubble { background: var(--msg-remote); border-bottom-left-radius: 2px; }
+        .btn-replay { background: none; border: 1px solid #444; color: var(--gray); border-radius: 50%; width: 24px; height: 24px; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .btn-replay:active { color: var(--accent); border-color: var(--accent); }
+
+        /* FOOTER */
+        footer { background: var(--header); padding: 10px; display: flex; gap: 10px; align-items: center; border-top: 1px solid #333; flex: 0 0 auto; z-index: 20; }
+        input[type="text"] { flex: 1; padding: 12px; border-radius: 24px; border: none; background: #2a3942; color: white; font-size: 16px; outline: none; }
+        .btn-circle { width: 48px; height: 48px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; flex-shrink: 0; transition: 0.2s; font-weight: bold; }
+        #btnRx { background: #333; color: #0f0; } #btnRx.listening { background: #0f0; color: #000; animation: pulse 1.5s infinite; } #btnTx { background: var(--accent); color: #000; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(0, 255, 0, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(0, 255, 0, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 255, 0, 0); } }
+
+        /* SETTINGS */
+        #settingsMenu { position: absolute; top: 55px; right: 10px; width: 220px; background: #2a2a2a; border: 1px solid #444; border-radius: 8px; padding: 15px; display: none; flex-direction: column; gap: 10px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); z-index: 100; }
+        .setting-row { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: #ccc; }
+        .setting-row input[type="number"] { background: #111; border: 1px solid #444; color: white; padding: 4px; border-radius: 4px; }
+        .menu-actions { display: flex; gap: 5px; margin-top: 10px; }
+        .btn-flat { flex: 1; padding: 8px; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; background: #444; color: white; }
+        /* Removed #jsonArea style */
+        .menu-header { font-size: 10px; color: #aaa; text-transform: uppercase; border-bottom: 1px solid #444; padding-bottom: 5px; margin-bottom: 5px; text-align: center; }
+        
+        /* CRYPTO KEYS UI */
+        .key-wrapper { display: flex; justify-content: center; gap: 10px; padding: 10px; background: #181818; border-radius: 6px; }
+        .key-dot { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #555; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; user-select: none; color: #fff; text-shadow: 0 0 2px #000; transition: transform 0.1s; }
+        .key-dot:active { transform: scale(0.9); }
+        .hidden { display: none !important; }
+
+        /* NEW FOOTER UNDER KEYS (Lang + Info) */
+        .crypto-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; margin-bottom: 10px; height: 30px; }
+        .btn-lang { width: 40px; height: 24px; font-size: 10px; background: #333; border: 1px solid #555; color: #aaa; cursor: pointer; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        .btn-lang.active { background: var(--tripio); color: #000; border-color: var(--tripio); }
+        .key-help { font-size:10px; color:#666; text-align:center; flex: 1; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="indicators">
+            <div class="dot" id="d0"></div><div class="dot" id="d1"></div><div class="dot" id="d2"></div><div class="dot" id="d3"></div>
+        </div>
+        <div class="header-right">
+            <button class="btn-mode mode-r2d2" id="btnMode" onclick="toggleMode()">R2D2</button>
+            <button class="btn-cal-small" id="btnCalTone" onclick="startCalibrationTx()">calibra ton</button>
+            <button class="btn-cal-small" id="btnCalListen" onclick="toggleCalibrationRx()">calibra ear</button>
+            <button class="btn-menu" onclick="toggleMenu()">⋮</button>
+        </div>
+    </header>
+
+    <section class="scope-container">
+        <canvas id="scope" width="600" height="150"></canvas>
+        <div class="scope-overlay">
+            <div class="status-text" id="statusLine">READY</div>
+            <div class="thresh-wrapper">
+                <span class="thresh-val" id="lblThresh">-40dB</span>
+                <input type="range" id="rngThresh" min="-90" max="-10" value="-40" oninput="uiRef()">
+            </div>
+        </div>
+    </section>
+
+    <main id="chatWindow">
+    </main>
+
+    <footer>
+        <button id="btnRx" class="btn-circle" onclick="toggleRxManual()">∇</button>
+        <input type="text" id="inpText" placeholder="Съобщение..." oninput="filterInput(this)">
+        <button id="btnTx" class="btn-circle" onclick="onSendClick()">∆</button>
+    </footer>
+
+    <div id="settingsMenu">
+        
+        <div class="menu-header">Криптиращ Ключ</div>
+        <div class="key-wrapper">
+            <div id="k0" class="key-dot code-0" onclick="rotateKey(0)">0</div>
+            <div id="k1" class="key-dot code-0" onclick="rotateKey(1)">0</div>
+            <div id="k2" class="key-dot code-0" onclick="rotateKey(2)">0</div>
+            <div id="k3" class="key-dot code-0" onclick="rotateKey(3)">0</div>
+        </div>
+        
+        <div class="crypto-footer">
+            <button class="btn-lang hidden" id="btnLangBG" onclick="setTripioLang('BG')">BG</button>
+            <div class="key-help" id="keyHelpText">(0000 = Без код)</div>
+            <button class="btn-lang hidden" id="btnLangEN" onclick="setTripioLang('EN')">EN</button>
+        </div>
+
+        <div class="menu-header">Настройки Честота</div>
+        <div class="setting-row"><label>Low Freq (Hz)</label><input type="number" id="cfg_fL"></div>
+        <div class="setting-row"><label>High Freq (Hz)</label><input type="number" id="cfg_fH"></div>
+        
+        <div class="menu-actions">
+            <button class="btn-flat" onclick="saveToMemory()">💾 Save</button>
+            <button class="btn-flat" style="background:#800;" onclick="resetDefaults()">Reset</button>
+        </div>
+        </div>
+
+<script>
+    // === CONFIG & MODES ===
+    const DEFAULT_CFG = { speed: 100, fL: 600, fH: 1200, tShort: 120, tLong: 360, tGap: 150, key: [0,0,0,0], mode: 'R2D2', lang: 'BG' };
+    let CFG = { ...DEFAULT_CFG };
+
+    let MODE = 'R2D2'; 
+    let CODE_LEN = 4;
+    let ACTIVE_MAP = {};
+    let ACTIVE_REV_MAP = {};
+
+    // --- MAPPING GENERATORS ---
+    function generateR2D2Mapping() {
+        const digits = ['0','1','2','3']; const codes = [];
+        for (let a of digits) for (let b of digits) for (let c of digits) for (let d of digits) codes.push(a+b+c+d);
+        const symbols = [' ']; 
+        const addRange = (start, end) => { for(let c=start; c<=end; c++) symbols.push(String.fromCharCode(c)); };
+        addRange('А'.charCodeAt(0), 'Я'.charCodeAt(0)); addRange('а'.charCodeAt(0), 'я'.charCodeAt(0));
+        addRange(65, 90); addRange(97, 122); for(let i=0; i<=9; i++) symbols.push(i.toString());
+        "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~".split('').forEach(s => symbols.push(s));
+        const map = {}; for(let i=0; i<symbols.length; i++) if(i<codes.length) map[codes[i]] = symbols[i];
+        return map;
+    }
+
+    function generateTripioMapping(lang) {
+        const digits = ['0','1','2','3']; const codes = [];
+        for (let a of digits) for (let b of digits) for (let c of digits) codes.push(a+b+c);
+        
+        const symbols = [' ']; 
+        for(let i=0; i<=9; i++) symbols.push(i.toString());
+        ". , ! ? - + = / :".split(' ').forEach(s => symbols.push(s));
+        const addRange = (start, end) => { for(let c=start; c<=end; c++) symbols.push(String.fromCharCode(c)); };
+        if (lang === 'BG') { addRange('А'.charCodeAt(0), 'Я'.charCodeAt(0)); } else { addRange(65, 90); }
+        const map = {}; for(let i=0; i<symbols.length; i++) if(i<codes.length) map[codes[i]] = symbols[i];
+        return map;
+    }
+
+    const MAP_R2D2 = generateR2D2Mapping();
+    const MAP_TRIPIO_BG = generateTripioMapping('BG');
+    const MAP_TRIPIO_ENG = generateTripioMapping('EN');
+
+    // --- MODE SWITCHING ---
+    function updateMaps() {
+        if (MODE === 'R2D2') {
+            CODE_LEN = 4;
+            ACTIVE_MAP = MAP_R2D2;
+        } else {
+            CODE_LEN = 3;
+            ACTIVE_MAP = (CFG.lang === 'BG') ? MAP_TRIPIO_BG : MAP_TRIPIO_ENG;
+        }
+        ACTIVE_REV_MAP = Object.fromEntries(Object.entries(ACTIVE_MAP).map(([k,v])=>[v,k]));
+        updateUIForMode();
+    }
+
+    function toggleMode() {
+        if (MODE === 'R2D2') MODE = 'TRIPIO'; else MODE = 'R2D2';
+        CFG.mode = MODE;
+        document.getElementById('inpText').value = ""; 
+        
+        if (MODE === 'TRIPIO') {
+            addMessage("ДОБРЕ ДОШЪЛ В ТРИПИО-ЧАТ WELCOME TO TRIPIO CHAT", 'remote');
+        } else {
+            addMessage("Добре дошъл в R2D2-chat", 'remote');
+        }
+        updateMaps();
+    }
+
+    function setTripioLang(l) { CFG.lang = l; updateMaps(); }
+
+    function updateUIForMode() {
+        const btn = document.getElementById('btnMode');
+        const d3 = document.getElementById('d3');
+        const k3 = document.getElementById('k3');
+        const bBG = document.getElementById('btnLangBG');
+        const bEN = document.getElementById('btnLangEN');
+        const hTxt = document.getElementById('keyHelpText');
+
+        btn.innerText = MODE;
+        btn.className = `btn-mode mode-${MODE.toLowerCase()}`;
+        document.querySelector('.status-text').style.color = (MODE==='TRIPIO') ? 'var(--tripio)' : 'var(--accent)';
+
+        if (MODE === 'TRIPIO') {
+            d3.classList.add('hidden');
+            k3.classList.add('hidden');
+            bBG.classList.remove('hidden');
+            bEN.classList.remove('hidden');
+            hTxt.innerText = "(000 = Без код)";
+            bBG.className = 'btn-lang' + (CFG.lang==='BG'?' active':'');
+            bEN.className = 'btn-lang' + (CFG.lang==='EN'?' active':'');
+        } else {
+            d3.classList.remove('hidden');
+            k3.classList.remove('hidden');
+            bBG.classList.add('hidden');
+            bEN.classList.add('hidden');
+            hTxt.innerText = "(0000 = Без код)";
+        }
+        filterInput(document.getElementById('inpText'));
+    }
+
+    // --- Variables ---
+    let ctx, source, analyzer, raf;
+    let micStream = null;
+    let isRx = false, isTx = false, isCalibrating = false; 
+    let calibMinDb = 100; let calibMaxDb = -100; 
+    let signalStart = 0; let signalFreqs = []; let buffer = []; let canvasX = 0;
+    let rxTimeout = null; let currentRxBubbleId = null;
+    let wakeLock = null;
+
+    // === UI ===
+    function toggleMenu() { const m=document.getElementById('settingsMenu'); m.style.display=m.style.display==='flex'?'none':'flex'; if(m.style.display==='flex') loadToUI(); }
+    function uiRef() { document.getElementById('lblThresh').innerText = document.getElementById('rngThresh').value + 'dB'; }
+    
+    // === INPUT FILTER ===
+    function filterInput(el) {
+        let val = el.value;
+        if (MODE === 'TRIPIO') val = val.toUpperCase(); 
+        let clean = "";
+        for (let char of val) {
+            if (ACTIVE_REV_MAP[char] !== undefined) clean += char;
+        }
+        if (val !== clean || (MODE === 'TRIPIO' && el.value !== val)) {
+            el.value = clean;
+        }
+    }
+
+    function addMessage(text, type) {
+        const chatWin = document.getElementById('chatWindow');
+        const div = document.createElement('div'); div.className = `msg ${type}`;
+        const msgId = 'msg-' + Date.now(); div.id = msgId;
+        const bubble = document.createElement('div'); bubble.className = 'bubble'; bubble.innerText = text;
+        const btn = document.createElement('button'); btn.className = 'btn-replay'; btn.innerHTML = '↺';
+        btn.onclick = () => { startTx(bubble.innerText); };
+        div.appendChild(type === 'own' ? btn : bubble); div.appendChild(type === 'own' ? bubble : btn);
+        chatWin.appendChild(div); chatWin.scrollTop = chatWin.scrollHeight;
+        return msgId;
+    }
+    function appendToRx(char) {
+        if (!currentRxBubbleId) currentRxBubbleId = addMessage("", "remote");
+        const bubble = document.querySelector(`#${currentRxBubbleId} .bubble`);
+        if(char === ' ') bubble.innerHTML += "&nbsp;"; else bubble.innerText += char;
+        const chatWin = document.getElementById('chatWindow'); chatWin.scrollTop = chatWin.scrollHeight;
+        clearTimeout(rxTimeout); rxTimeout = setTimeout(() => { currentRxBubbleId = null; }, 3000);
+    }
+
+    // === KEY LOGIC (FIXED: Preserves hidden state) ===
+    function rotateKey(idx) {
+        CFG.key[idx] = (CFG.key[idx] + 1) % 4;
+        updateKeyUI();
+    }
+    function updateKeyUI() {
+        for(let i=0; i<4; i++) {
+            const el = document.getElementById('k'+i);
+            el.innerText = CFG.key[i];
+            let cls = 'key-dot code-' + CFG.key[i];
+            // FIX: If we are in TRIPIO, force hide the 4th key (index 3)
+            if (MODE === 'TRIPIO' && i === 3) {
+                cls += ' hidden';
+            }
+            el.className = cls;
+        }
+    }
+
+    // === SETTINGS ===
+    function loadToUI() {
+        document.getElementById('cfg_fL').value = CFG.fL; 
+        document.getElementById('cfg_fH').value = CFG.fH;
+        updateKeyUI();
+        updateUIForMode();
+    }
+    function saveToMemory() {
+        CFG.fL = parseInt(document.getElementById('cfg_fL').value); 
+        CFG.fH = parseInt(document.getElementById('cfg_fH').value);
+        toggleMenu(); document.getElementById('statusLine').innerText = "SETTINGS SAVED";
+    }
+    function resetDefaults() { CFG = { ...DEFAULT_CFG, key:[0,0,0,0] }; MODE='R2D2'; updateMaps(); loadToUI(); alert("Reset!"); }
+    // Removed exportCfg and importCfg functions
+
+    // === WAKE LOCK ===
+    async function requestWakeLock() {
+        if ('wakeLock' in navigator) {
+            try { wakeLock = await navigator.wakeLock.request('screen'); } catch (err) { console.error(err); }
+        }
+    }
+    document.addEventListener('visibilitychange', async () => {
+        if (wakeLock !== null && document.visibilityState === 'visible') await requestWakeLock();
+    });
+
+    // === AUDIO CORE ===
+    function initCtx() { if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state === 'suspended') ctx.resume(); }
+
+    async function startListening() {
+        if(isRx || isTx || isCalibrating) return;
+        try {
+            initCtx(); requestWakeLock();
+            if (!micStream) micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+            if(!analyzer) { analyzer = ctx.createAnalyser(); analyzer.fftSize = 512; analyzer.smoothingTimeConstant = 0.5; }
+            if(!source) { source = ctx.createMediaStreamSource(micStream); source.connect(analyzer); }
+            isRx = true; 
+            document.getElementById('btnRx').classList.add('listening');
+            document.getElementById('statusLine').innerText = `<< LISTENING ${MODE} >>`;
+            drawLoop();
+        } catch(e) { console.warn(e); document.getElementById('statusLine').innerText = "TAP TO START"; }
+    }
+    function stopListening() {
+        if(!isRx) return; isRx = false;
+        document.getElementById('btnRx').classList.remove('listening');
+        cancelAnimationFrame(raf);
+        document.getElementById('statusLine').innerText = "PAUSED";
+    }
+    function toggleRxManual() { if(isRx) { stopListening(); document.getElementById('statusLine').innerText="RX OFF"; } else { startListening(); } }
+    function forceStopAll() {
+        isTx=false; isRx=false; isCalibrating=false; cancelAnimationFrame(raf);
+        document.getElementById('btnRx').classList.remove('listening');
+        document.getElementById('btnCalListen').classList.remove('cal-recording'); document.getElementById('btnCalListen').innerText="calibra ear";
+        document.getElementById('btnCalTone').classList.remove('cal-sending');
+    }
+
+    // === CALIBRATION ===
+    async function startCalibrationTx() {
+        if(isRx) stopListening(); if(isTx) forceStopAll();
+        initCtx(); requestWakeLock(); isTx = true;
+        document.getElementById('btnCalTone').classList.add('cal-sending');
+        document.getElementById('statusLine').innerText = "SENDING CALIB TONE...";
+        const tNow = ctx.currentTime + 0.1;
+        schedTone(CFG.fH, tNow, 3.0); schedTone(CFG.fL, tNow + 3.0, 3.0);
+        await new Promise(r => setTimeout(r, 6200));
+        isTx = false; document.getElementById('btnCalTone').classList.remove('cal-sending'); startListening();
+    }
+    async function toggleCalibrationRx() {
+        if (isCalibrating) { finishCalibration(); return; }
+        if(isRx) stopListening(); if(isTx) forceStopAll();
+        try {
+            initCtx(); requestWakeLock();
+            if (!micStream) micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+            if (!analyzer) analyzer = ctx.createAnalyser(); 
+            analyzer.fftSize = 512; analyzer.smoothingTimeConstant = 0.5;
+            if(!source) { source = ctx.createMediaStreamSource(micStream); source.connect(analyzer); }
+            isCalibrating = true; calibMinDb = 100; calibMaxDb = -100;
+            const calBtn = document.getElementById('btnCalListen'); calBtn.classList.add('cal-recording'); calBtn.innerText = "STOP";
+            document.getElementById('statusLine').innerText = "RECORDING MIN/MAX...";
+            drawLoop();
+        } catch(e) { alert("Mic Error"); startListening(); }
+    }
+    function finishCalibration() {
+        isCalibrating = false;
+        document.getElementById('btnCalListen').classList.remove('cal-recording'); document.getElementById('btnCalListen').innerText = "calibra ear";
+        if (calibMaxDb > -100) {
+            let range = calibMaxDb - calibMinDb; let mid = calibMinDb + (range / 2);
+            let newThresh = Math.round(mid);
+            if (newThresh > -10) newThresh = -10; if (newThresh < -90) newThresh = -90;
+            document.getElementById('rngThresh').value = newThresh; uiRef();
+        }
+        cancelAnimationFrame(raf); startListening();
+    }
+
+    // === TRANSMIT ===
+    async function onSendClick() {
+        const txt = document.getElementById('inpText').value; if(!txt) return;
+        addMessage(txt, 'own'); document.getElementById('inpText').value = ''; await startTx(txt);
+    }
+    async function startTx(text) {
+        if(isTx) return; stopListening();
+        initCtx(); requestWakeLock(); isTx = true;
+        document.getElementById('statusLine').innerText = `TRANSMITTING ${MODE} >>`;
+        const fL = CFG.fL, fH = CFG.fH; 
+        const mod = 1; 
+        const tS = (CFG.tShort * mod) / 1000, tL = (CFG.tLong * mod) / 1000, tG = (CFG.tGap * mod) / 1000;
+        let t = ctx.currentTime + 0.1;
+
+        for (let char of text) {
+            if(!isTx) break; let code = ACTIVE_REV_MAP[char]; if (!code) continue;
+
+            let digitsToTransmit = [];
+            let isSpace = (code === '0'.repeat(CODE_LEN));
+
+            if (isSpace) {
+                for(let i=0; i<CODE_LEN; i++) digitsToTransmit.push('0');
+            } else {
+                for (let i=0; i<CODE_LEN; i++) {
+                    let rawVal = parseInt(code[i]);
+                    let keyVal = CFG.key[i];
+                    let encVal = (rawVal + keyVal) % 4;
+                    digitsToTransmit.push(encVal.toString());
+                }
+            }
+
+            for (let digit of digitsToTransmit) {
+                let f = (digit=='1'||digit=='3') ? fH : fL; let d = (digit=='2'||digit=='3') ? tL : tS;
+                schedTone(f, t, d); t += d + tG;
+                setTimeout(()=> highlightBuffer(digit), (t - ctx.currentTime)*1000);
+            }
+            t += tG;
+        }
+        if(isTx) { let wait = (t - ctx.currentTime) * 1000; if (wait < 0) wait = 0; await new Promise(r => setTimeout(r, wait)); }
+        isTx = false; startListening();
+    }
+
+    function schedTone(f, t, d) {
+        const o = ctx.createOscillator(); const g = ctx.createGain();
+        o.frequency.value = f; o.connect(g); g.connect(ctx.destination);
+        o.start(t); o.stop(t + d);
+        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(1, t+0.01);
+        g.gain.setValueAtTime(1, t+d-0.01); g.gain.linearRampToValueAtTime(0, t+d);
+    }
+
+    // === RX LOOP ===
+    function drawLoop() {
+        if(!isRx && !isCalibrating) return;
+        raf = requestAnimationFrame(drawLoop);
+        const freqData = new Float32Array(analyzer.frequencyBinCount);
+        analyzer.getFloatFrequencyData(freqData);
+
+        let maxDb = -Infinity; let maxIdx = -1;
+        for(let i=3; i<freqData.length; i++){ if(freqData[i] > maxDb) { maxDb = freqData[i]; maxIdx = i; } }
+        let freq = maxIdx * (ctx.sampleRate / analyzer.fftSize);
+
+        if (isCalibrating) { if (maxDb > -120) { if (maxDb < calibMinDb) calibMinDb = maxDb; if (maxDb > calibMaxDb) calibMaxDb = maxDb; } }
+
+        let thresh = parseInt(document.getElementById('rngThresh').value);
+        let now = Date.now();
+        const cvs = document.getElementById('scope'); const c = cvs.getContext('2d');
+        if(canvasX >= cvs.width) { canvasX = 0; c.fillStyle = '#000'; c.fillRect(0,0, cvs.width, cvs.height); }
+        c.fillStyle = 'rgba(0,0,0,0.02)'; c.fillRect(0,0,cvs.width,cvs.height);
+        
+        let y = cvs.height - ((maxDb + 100) * 1.5); 
+        c.fillStyle = isCalibrating ? '#ff3d00' : ((maxDb > thresh) ? '#0f0' : '#333');
+        c.fillRect(canvasX, y, 2, 4);
+        let threshY = cvs.height - ((thresh + 100) * 1.5); c.fillStyle = '#555'; c.fillRect(canvasX, threshY, 2, 1);
+        canvasX++;
+
+        if (!isCalibrating && maxDb > thresh && freq > 300) {
+            if (signalStart === 0) { signalStart = now; signalFreqs = []; }
+            signalFreqs.push(freq);
+        } else {
+            if (!isCalibrating && signalStart > 0) {
+                let dur = now - signalStart;
+                if (dur > 50) {
+                    let avgFreq = signalFreqs.reduce((a,b)=>a+b,0) / signalFreqs.length;
+                    processSignal(dur, avgFreq);
+                    c.fillStyle = '#fff'; c.fillRect(canvasX, 0, 1, cvs.height);
+                }
+                signalStart = 0;
+            }
+        }
+    }
+
+    function processSignal(dur, freq) {
+        const mod = 1; 
+        const currentShort = CFG.tShort * mod; const currentLong = CFG.tLong * mod;
+        const splitTime = (currentShort + currentLong) / 2;
+        let isHigh = Math.abs(freq - CFG.fH) < Math.abs(freq - CFG.fL);
+        let isLong = dur > splitTime;
+        let digit = null;
+        if (!isHigh && !isLong) digit = '0'; if (isHigh && !isLong) digit = '1';
+        if (!isHigh && isLong) digit = '2'; if (isHigh && isLong) digit = '3';
+        if (digit) pushBuffer(digit);
+    }
+
+    let bufTimer;
+    function pushBuffer(d) {
+        clearTimeout(bufTimer); buffer.push(d); updateIndicators(); 
+        
+        if(buffer.length === CODE_LEN) {
+            let receivedCode = "";
+            let isSpace = (buffer.join('') === '0'.repeat(CODE_LEN));
+
+            if (isSpace) {
+                receivedCode = '0'.repeat(CODE_LEN);
+            } else {
+                for(let i=0; i<CODE_LEN; i++) {
+                    let recVal = parseInt(buffer[i]);
+                    let keyVal = CFG.key[i];
+                    let origVal = (recVal - keyVal + 4) % 4;
+                    receivedCode += origVal.toString();
+                }
+            }
+
+            let char = ACTIVE_MAP[receivedCode] || '?';
+            appendToRx(char); setTimeout(()=>{ buffer=[]; updateIndicators(); }, 100);
+        } else { 
+            const mod = 1;
+            const safeWait = (CFG.tLong + CFG.tGap) * mod * 2;
+            bufTimer = setTimeout(()=>{ buffer=[]; updateIndicators(); }, safeWait); 
+        }
+    }
+    function updateIndicators() {
+        for(let i=0; i<4; i++) {
+            let el = document.getElementById('d'+i);
+            let v = buffer[i]; 
+            el.className = 'dot' + (v ? ' code-'+v : '') + (i >= CODE_LEN ? ' hidden' : ''); 
+            el.innerText = v || '';
+        }
+    }
+    function highlightBuffer(d) {
+        const el = document.getElementById('d0'); el.className = 'dot code-'+d; el.innerText = d;
+        setTimeout(()=> { el.className='dot'; el.innerText=''; }, 100);
+    }
+
+    window.onload = function() {
+        updateMaps();
+        startListening();
+        addMessage("Добре дошъл в R2D2-chat", 'remote');
+        document.body.addEventListener('click', () => { 
+            if(ctx && ctx.state==='suspended') ctx.resume(); 
+            requestWakeLock();
+        }, {once:true});
+    };
+
+</script>
+</body>
+</html>
