@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>droid-chat</title>
+    <title>Droid-Chat</title>
     <style>
         :root {
             --bg: #121212; --header: #1f1f1f; --msg-own: #005c4b; --msg-remote: #202c33;
@@ -23,7 +23,6 @@
         .btn-cal-small { background: #333; color: var(--accent); border: 1px solid #555; border-radius: 4px; font-size: 10px; padding: 5px 8px; cursor: pointer; text-transform: uppercase; font-weight: bold; min-width: 60px; }
         .btn-cal-small:active { background: var(--accent); color: #000; }
         
-        /* MODE TOGGLE BUTTON */
         .btn-mode { background: #333; color: #fff; border: 1px solid #555; border-radius: 4px; font-size: 10px; padding: 5px 8px; cursor: pointer; text-transform: uppercase; font-weight: bold; min-width: 60px; transition: 0.3s; }
         .mode-r2d2 { color: var(--accent); border-color: var(--accent); box-shadow: 0 0 5px rgba(0,229,255,0.3); }
         .mode-tripio { color: var(--tripio); border-color: var(--tripio); box-shadow: 0 0 5px rgba(255,0,255,0.3); }
@@ -35,6 +34,7 @@
         /* COLORS */
         .code-0 { background: #ff0055; box-shadow: 0 0 5px #ff0055; } .code-1 { background: #00e5ff; box-shadow: 0 0 5px #00e5ff; } 
         .code-2 { background: #880022; color: #fff; } .code-3 { background: #007788; color: #fff; } 
+        .code-new { background: #ffff00 !important; box-shadow: 0 0 8px #ffff00; }
 
         /* SCOPE */
         .scope-container { background: #000; position: relative; border-bottom: 1px solid #333; flex: 0 0 80px; }
@@ -54,6 +54,10 @@
         .btn-replay { background: none; border: 1px solid #444; color: var(--gray); border-radius: 50%; width: 24px; height: 24px; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .btn-replay:active { color: var(--accent); border-color: var(--accent); }
 
+        /* DICTIONARY STYLES */
+        .word-new { color: #ffff00; cursor: pointer; text-decoration: underline; text-decoration-style: dotted; font-weight: bold; }
+        .word-known { color: #00ff00; }
+        
         /* FOOTER */
         footer { background: var(--header); padding: 10px; display: flex; gap: 10px; align-items: center; border-top: 1px solid #333; flex: 0 0 auto; z-index: 20; }
         input[type="text"] { flex: 1; padding: 12px; border-radius: 24px; border: none; background: #2a3942; color: white; font-size: 16px; outline: none; }
@@ -65,9 +69,9 @@
         #settingsMenu { position: absolute; top: 55px; right: 10px; width: 220px; background: #2a2a2a; border: 1px solid #444; border-radius: 8px; padding: 15px; display: none; flex-direction: column; gap: 10px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); z-index: 100; }
         .setting-row { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: #ccc; }
         .setting-row input[type="number"] { background: #111; border: 1px solid #444; color: white; padding: 4px; border-radius: 4px; }
+        .setting-row input[type="range"] { accent-color: var(--accent); }
         .menu-actions { display: flex; gap: 5px; margin-top: 10px; }
         .btn-flat { flex: 1; padding: 8px; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; background: #444; color: white; }
-        /* Removed #jsonArea style */
         .menu-header { font-size: 10px; color: #aaa; text-transform: uppercase; border-bottom: 1px solid #444; padding-bottom: 5px; margin-bottom: 5px; text-align: center; }
         
         /* CRYPTO KEYS UI */
@@ -76,11 +80,26 @@
         .key-dot:active { transform: scale(0.9); }
         .hidden { display: none !important; }
 
-        /* NEW FOOTER UNDER KEYS (Lang + Info) */
         .crypto-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; margin-bottom: 10px; height: 30px; }
         .btn-lang { width: 40px; height: 24px; font-size: 10px; background: #333; border: 1px solid #555; color: #aaa; cursor: pointer; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-weight: bold; }
         .btn-lang.active { background: var(--tripio); color: #000; border-color: var(--tripio); }
-        .key-help { font-size:10px; color:#666; text-align:center; flex: 1; }
+        
+        .btn-map-edit { flex: 1; height: 24px; margin: 0 5px; font-size: 10px; background: #444; color: #fff; border: 1px solid #666; border-radius: 4px; cursor: pointer; text-transform: uppercase; }
+        
+        #dictStatus { text-align:center; font-size:10px; color:#ffff00; margin-bottom:5px; }
+        #fileInput, #mapInput { display: none; }
+
+        /* SYMBOL EDITOR MODAL */
+        #symbolEditor { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; display: none; flex-direction: column; padding: 20px; }
+        #editorHeader { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        #editorTitle { font-size: 16px; color: var(--accent); font-weight: bold; }
+        #editorList { flex: 1; overflow-y: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-content: start; }
+        .map-row { display: flex; align-items: center; background: #222; padding: 5px; border-radius: 4px; border: 1px solid #333; }
+        .map-code { font-family: monospace; color: #aaa; margin-right: 10px; font-size: 12px; min-width: 40px; }
+        .map-input { background: #000; border: 1px solid #444; color: #fff; width: 40px; text-align: center; font-size: 14px; padding: 5px; border-radius: 2px; text-transform: uppercase; }
+        .map-input:focus { border-color: var(--accent); outline: none; }
+        #editorFooter { margin-top: 15px; display: flex; gap: 10px; justify-content: center; }
+
     </style>
 </head>
 <body>
@@ -113,13 +132,13 @@
 
     <footer>
         <button id="btnRx" class="btn-circle" onclick="toggleRxManual()">∇</button>
-        <input type="text" id="inpText" placeholder="Съобщение..." oninput="filterInput(this)">
+        <input type="text" id="inpText" placeholder="Message...">
         <button id="btnTx" class="btn-circle" onclick="onSendClick()">∆</button>
     </footer>
 
     <div id="settingsMenu">
         
-        <div class="menu-header">Криптиращ Ключ</div>
+        <div class="menu-header">ENCRYPTION KEY</div>
         <div class="key-wrapper">
             <div id="k0" class="key-dot code-0" onclick="rotateKey(0)">0</div>
             <div id="k1" class="key-dot code-0" onclick="rotateKey(1)">0</div>
@@ -129,22 +148,56 @@
         
         <div class="crypto-footer">
             <button class="btn-lang hidden" id="btnLangBG" onclick="setTripioLang('BG')">BG</button>
-            <div class="key-help" id="keyHelpText">(0000 = Без код)</div>
+            <button class="btn-map-edit" onclick="openSymbolEditor()">SYMBOLS</button>
             <button class="btn-lang hidden" id="btnLangEN" onclick="setTripioLang('EN')">EN</button>
         </div>
 
-        <div class="menu-header">Настройки Честота</div>
+        <div class="menu-header">DICTIONARY</div>
+        <div id="dictStatus">Думи: 0</div>
+        <div class="menu-actions">
+            <button class="btn-flat" onclick="exportDict()">Export</button>
+            <button class="btn-flat" onclick="document.getElementById('fileInput').click()">Import</button>
+            <button class="btn-flat" style="background:#900;" onclick="clearDict()">Delete</button>
+        </div>
+        <input type="file" id="fileInput" accept=".json" onchange="importDict(this)">
+
+        <div class="menu-header">speed</div>
+        <div class="setting-row">
+            <div style="display:flex; justify-content:space-between;">
+                <label>Transmit Speed</label>
+                <span id="lblSpeed">100%</span>
+            </div>
+            <input type="range" id="cfg_speed" min="70" max="160" step="5" oninput="uiRefSpeed()">
+        </div>
+
+        <div class="menu-header">Frequency Settings</div>
         <div class="setting-row"><label>Low Freq (Hz)</label><input type="number" id="cfg_fL"></div>
         <div class="setting-row"><label>High Freq (Hz)</label><input type="number" id="cfg_fH"></div>
         
         <div class="menu-actions">
-            <button class="btn-flat" onclick="saveToMemory()">💾 Save</button>
+            <button class="btn-flat" onclick="saveToMemory()">Save</button>
             <button class="btn-flat" style="background:#800;" onclick="resetDefaults()">Reset</button>
         </div>
+    </div>
+
+    <div id="symbolEditor">
+        <div id="editorHeader">
+            <div id="editorTitle">Editor Symbols</div>
+            <button class="btn-flat" style="width:30px; background:#444;" onclick="askToClose()">CLOSE AND SAVE</button>
         </div>
+        <div id="editorList"></div>
+        <div id="editorFooter">
+            <button class="btn-flat" style="background:#d32f2f; color:#fff;" onclick="restoreDefaultsInEditor()">Reset</button>
+            <button class="btn-flat" onclick="exportMap()">Export</button>
+            <button class="btn-flat" onclick="document.getElementById('mapInput').click()">Import</button>
+        </div>
+        <input type="file" id="mapInput" accept=".json" onchange="importMap(this)">
+    </div>
+
+
 
 <script>
-    // === CONFIG & MODES ===
+    // === 1. CONFIG ===
     const DEFAULT_CFG = { speed: 100, fL: 600, fH: 1200, tShort: 120, tLong: 360, tGap: 150, key: [0,0,0,0], mode: 'R2D2', lang: 'BG' };
     let CFG = { ...DEFAULT_CFG };
 
@@ -152,21 +205,136 @@
     let CODE_LEN = 4;
     let ACTIVE_MAP = {};
     let ACTIVE_REV_MAP = {};
+    
+    // CUSTOM MAP STORAGE
+    let CUSTOM_MAPS = {
+        R2D2: null,
+        TRIPIO_BG: null,
+        TRIPIO_EN: null
+    };
 
-    // --- MAPPING GENERATORS ---
-    function generateR2D2Mapping() {
+    // === 2. DICTIONARIES (SHARED) ===
+    const BASE_DICT = [];
+    let DICT_SHARED = [...BASE_DICT];
+
+    function initDicts() {
+        const shared = localStorage.getItem('dict_shared');
+        if(shared) {
+            try { DICT_SHARED = JSON.parse(shared); } catch(e){}
+        } 
+        updateDictUI();
+    }
+    
+    function saveDicts() {
+        localStorage.setItem('dict_shared', JSON.stringify(DICT_SHARED));
+        updateDictUI();
+    }
+    
+    function updateDictUI() {
+        document.getElementById('dictStatus').innerText = `Words in a dictionary: ${DICT_SHARED.length}`;
+    }
+    
+    window.addToDict = function(el, word) {
+        word = word.toUpperCase();
+        if(!DICT_SHARED.includes(word)) {
+            DICT_SHARED.push(word);
+            saveDicts();
+            el.classList.remove('word-new');
+            el.classList.add('word-known');
+            el.onclick = null;
+        }
+    };
+    
+    function exportDict() {
+        const isKeyActive = CFG.key.some(k => k !== 0);
+        let finalDict = [];
+        let filename = "droid_dict_shared.json";
+
+        if (isKeyActive) {
+            const msg = `ATTENTION: STIRRING MODE!\n\nKey: [ ${CFG.key.join('')} ]\nThis will rearrange the words in the dictionary according to the code, but the code will not decode them afterwards.\nContinued?`;
+            if (!confirm(msg)) return;
+
+            let mapped = DICT_SHARED.map((word, originalIndex) => {
+                return { word: word, encVal: calculateEncryptedIndex(originalIndex) };
+            });
+
+            mapped.sort((a, b) => a.encVal - b.encVal);
+            finalDict = mapped.map(item => item.word);
+            filename = `droid_dict_SHUFFLED_${CFG.key.join('')}.json`;
+
+        } else {
+            finalDict = DICT_SHARED;
+        }
+
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(finalDict));
+        const a = document.createElement('a'); a.href = dataStr; 
+        a.download = filename; 
+        a.click();
+    }
+
+    function calculateEncryptedIndex(idx) {
+        let s = intToBaseN(idx, 8, 4); 
+        let res = "";
+        for(let i=0; i<s.length; i++) {
+            let raw = parseInt(s[i]);
+            let k = CFG.key[i % 4]; 
+            let enc = (raw + k) % 4; 
+            res += enc.toString();
+        }
+        return parseInt(res, 4);
+    }
+    
+    function importDict(el) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const arr = JSON.parse(e.target.result);
+                if(Array.isArray(arr)) {
+                    let added = 0;
+                    arr.forEach(w => { 
+                        w=w.toUpperCase().trim(); 
+                        if(w && !DICT_SHARED.includes(w)) { DICT_SHARED.push(w); added++; } 
+                    });
+                    saveDicts();
+                    alert(`Импортирани ${added} думи в общия речник!`);
+                    toggleMenu();
+                }
+            } catch(err){ alert("Грешен файл."); }
+        };
+        reader.readAsText(el.files[0]);
+        el.value = '';
+    }
+    
+    function clearDict() {
+        if(!confirm("Delete the entire dictionary?")) return;
+        DICT_SHARED = [...BASE_DICT];
+        localStorage.removeItem('dict_shared');
+        updateDictUI();
+        alert("The dictionary is reset!");
+    }
+
+    // === 3. MAPPING LOGIC ===
+    
+    // Default Generators (Fallback)
+    function generateDefaultR2D2() {
         const digits = ['0','1','2','3']; const codes = [];
         for (let a of digits) for (let b of digits) for (let c of digits) for (let d of digits) codes.push(a+b+c+d);
+        
         const symbols = [' ']; 
-        const addRange = (start, end) => { for(let c=start; c<=end; c++) symbols.push(String.fromCharCode(c)); };
-        addRange('А'.charCodeAt(0), 'Я'.charCodeAt(0)); addRange('а'.charCodeAt(0), 'я'.charCodeAt(0));
-        addRange(65, 90); addRange(97, 122); for(let i=0; i<=9; i++) symbols.push(i.toString());
-        "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~".split('').forEach(s => symbols.push(s));
-        const map = {}; for(let i=0; i<symbols.length; i++) if(i<codes.length) map[codes[i]] = symbols[i];
+        for(let i=0; i<=9; i++) symbols.push(i.toString());
+        for(let c=65; c<=90; c++) symbols.push(String.fromCharCode(c));
+        const bgStart = 'А'.charCodeAt(0); const bgEnd = 'Я'.charCodeAt(0);
+        for(let c=bgStart; c<=bgEnd; c++) symbols.push(String.fromCharCode(c));
+        const punct = ". , ! ? - + = / : ; \" ' ( ) @ # % * [ ] < > $ & _ ^ | ~ ` { } \\".split(' ');
+        punct.forEach(p => symbols.push(p));
+
+        const map = {}; 
+        codes.forEach(code => map[code] = ""); // Init all empty
+        for(let i=0; i<symbols.length; i++) if(i < codes.length) map[codes[i]] = symbols[i];
         return map;
     }
 
-    function generateTripioMapping(lang) {
+    function generateDefaultTripio(lang) {
         const digits = ['0','1','2','3']; const codes = [];
         for (let a of digits) for (let b of digits) for (let c of digits) codes.push(a+b+c);
         
@@ -175,37 +343,187 @@
         ". , ! ? - + = / :".split(' ').forEach(s => symbols.push(s));
         const addRange = (start, end) => { for(let c=start; c<=end; c++) symbols.push(String.fromCharCode(c)); };
         if (lang === 'BG') { addRange('А'.charCodeAt(0), 'Я'.charCodeAt(0)); } else { addRange(65, 90); }
-        const map = {}; for(let i=0; i<symbols.length; i++) if(i<codes.length) map[codes[i]] = symbols[i];
+        
+        const map = {}; 
+        codes.forEach(code => map[code] = ""); // Init all empty
+        for(let i=0; i<symbols.length; i++) if(i<codes.length) map[codes[i]] = symbols[i];
         return map;
     }
 
-    const MAP_R2D2 = generateR2D2Mapping();
-    const MAP_TRIPIO_BG = generateTripioMapping('BG');
-    const MAP_TRIPIO_ENG = generateTripioMapping('EN');
+    function initMaps() {
+        const saved = localStorage.getItem('custom_maps');
+        if (saved) {
+            try {
+                CUSTOM_MAPS = JSON.parse(saved);
+            } catch(e) { console.error("Map load error", e); }
+        }
+        // Ensure not null if first run or cleared
+        if (!CUSTOM_MAPS.R2D2) CUSTOM_MAPS.R2D2 = generateDefaultR2D2();
+        if (!CUSTOM_MAPS.TRIPIO_BG) CUSTOM_MAPS.TRIPIO_BG = generateDefaultTripio('BG');
+        if (!CUSTOM_MAPS.TRIPIO_EN) CUSTOM_MAPS.TRIPIO_EN = generateDefaultTripio('EN');
+    }
 
-    // --- MODE SWITCHING ---
+    function saveCustomMaps() {
+        localStorage.setItem('custom_maps', JSON.stringify(CUSTOM_MAPS));
+    }
+
     function updateMaps() {
         if (MODE === 'R2D2') {
             CODE_LEN = 4;
-            ACTIVE_MAP = MAP_R2D2;
+            ACTIVE_MAP = CUSTOM_MAPS.R2D2;
         } else {
             CODE_LEN = 3;
-            ACTIVE_MAP = (CFG.lang === 'BG') ? MAP_TRIPIO_BG : MAP_TRIPIO_ENG;
+            ACTIVE_MAP = (CFG.lang === 'BG') ? CUSTOM_MAPS.TRIPIO_BG : CUSTOM_MAPS.TRIPIO_EN;
         }
-        ACTIVE_REV_MAP = Object.fromEntries(Object.entries(ACTIVE_MAP).map(([k,v])=>[v,k]));
+        
+        // Build reverse map (Symbol -> Code)
+        // Note: If multiple codes have same symbol, last one wins.
+        ACTIVE_REV_MAP = {};
+        for (const [code, sym] of Object.entries(ACTIVE_MAP)) {
+            if (sym && sym !== "") ACTIVE_REV_MAP[sym] = code;
+        }
+        
         updateUIForMode();
+        updateDictUI();
     }
+
+    // === NEW: EDITOR FUNCTIONS ===
+    
+    // === НОВИ ФУНКЦИИ ЗА РЕДАКТОРА (СЛОЖЕТЕ ТОВА НА МЯСТОТО НА СТАРИТЕ) ===
+    
+    function openSymbolEditor() {
+        const modal = document.getElementById('symbolEditor');
+        const list = document.getElementById('editorList');
+        const title = document.getElementById('editorTitle');
+        
+        modal.style.display = 'flex';
+        list.innerHTML = '';
+        
+        let modeName = MODE;
+        if (MODE === 'TRIPIO') modeName += ` (${CFG.lang})`;
+        title.innerText = `Editor: ${modeName}`;
+
+        const keys = Object.keys(ACTIVE_MAP).sort();
+        
+        keys.forEach(code => {
+            const sym = ACTIVE_MAP[code] || "";
+            const row = document.createElement('div');
+            row.className = 'map-row';
+            
+            const lbl = document.createElement('div');
+            lbl.className = 'map-code';
+            lbl.innerText = code;
+            
+            const inp = document.createElement('input');
+            inp.type = 'text';
+            inp.className = 'map-input';
+            inp.value = sym;
+            inp.maxLength = 1; 
+            inp.dataset.code = code;
+            
+            row.appendChild(lbl);
+            row.appendChild(inp);
+            list.appendChild(row);
+        });
+    }
+
+    // НОВА ФУНКЦИЯ: Пита потребителя дали да запази
+    function askToClose() {
+        if (confirm("Save change?")) {
+            saveMapFromEditor(true); // true означава "затвори след запис"
+        } else {
+            document.getElementById('symbolEditor').style.display = 'none'; // Затваря без запис
+        }
+    }
+
+    // НОВА ФУНКЦИЯ: Възстановява стандартните символи (само в полетата)
+    function restoreDefaultsInEditor() {
+        if(!confirm("Сигурни ли сте, че искате да върнете стандартните символи?")) return;
+
+        let defaultMap = {};
+        if (MODE === 'R2D2') defaultMap = generateDefaultR2D2();
+        else defaultMap = generateDefaultTripio(CFG.lang);
+
+        const inputs = document.querySelectorAll('.map-input');
+        inputs.forEach(inp => {
+            const code = inp.dataset.code;
+            inp.value = defaultMap[code] !== undefined ? defaultMap[code] : "";
+        });
+    }
+
+    // ПРОМЕНЕНА ФУНКЦИЯ: Приема параметър shouldClose
+    function saveMapFromEditor(shouldClose) {
+        const inputs = document.querySelectorAll('.map-input');
+        const newMap = {};
+        
+        inputs.forEach(inp => {
+            const code = inp.dataset.code;
+            const val = inp.value.toUpperCase(); 
+            newMap[code] = val;
+        });
+
+        if (MODE === 'R2D2') {
+            CUSTOM_MAPS.R2D2 = newMap;
+        } else {
+            if (CFG.lang === 'BG') CUSTOM_MAPS.TRIPIO_BG = newMap;
+            else CUSTOM_MAPS.TRIPIO_EN = newMap;
+        }
+
+        saveCustomMaps();
+        updateMaps();
+        
+        if (shouldClose) {
+            document.getElementById('symbolEditor').style.display = 'none';
+        }
+    }
+
+    function exportMap() {
+        let mapName = MODE;
+        if (MODE === 'TRIPIO') mapName += `_${CFG.lang}`;
+        
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(ACTIVE_MAP));
+        const a = document.createElement('a'); 
+        a.href = dataStr; 
+        a.download = `droid_map_${mapName}.json`; 
+        a.click();
+    }
+
+    function importMap(el) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const newMap = JSON.parse(e.target.result);
+                if (typeof newMap === 'object') {
+                    // Check compatibility (code length)
+                    const sampleKey = Object.keys(newMap)[0];
+                    if (sampleKey.length !== CODE_LEN) {
+                        alert(`Грешка: Този файл не е за режим ${MODE} (Дължина на кода ${CODE_LEN})`);
+                        return;
+                    }
+
+                    if (MODE === 'R2D2') CUSTOM_MAPS.R2D2 = newMap;
+                    else if (CFG.lang === 'BG') CUSTOM_MAPS.TRIPIO_BG = newMap;
+                    else CUSTOM_MAPS.TRIPIO_EN = newMap;
+
+                    saveCustomMaps();
+                    updateMaps();
+                    closeSymbolEditor();
+                    alert("Мапингът зареден успешно!");
+                }
+            } catch(err){ alert("Грешен файл."); }
+        };
+        reader.readAsText(el.files[0]);
+        el.value = '';
+    }
+
+    // === EXISTING LOGIC ===
 
     function toggleMode() {
         if (MODE === 'R2D2') MODE = 'TRIPIO'; else MODE = 'R2D2';
         CFG.mode = MODE;
         document.getElementById('inpText').value = ""; 
-        
-        if (MODE === 'TRIPIO') {
-            addMessage("ДОБРЕ ДОШЪЛ В ТРИПИО-ЧАТ WELCOME TO TRIPIO CHAT", 'remote');
-        } else {
-            addMessage("Добре дошъл в R2D2-chat", 'remote');
-        }
+        if (MODE === 'TRIPIO') { addMessage("TRIPIO CHAT", 'remote'); } 
+        else { addMessage("R2D2 CHAT", 'remote'); }
         updateMaps();
     }
 
@@ -217,31 +535,25 @@
         const k3 = document.getElementById('k3');
         const bBG = document.getElementById('btnLangBG');
         const bEN = document.getElementById('btnLangEN');
-        const hTxt = document.getElementById('keyHelpText');
-
+        
+        // Old help text removed, using button now, but logic remains for keys
         btn.innerText = MODE;
         btn.className = `btn-mode mode-${MODE.toLowerCase()}`;
         document.querySelector('.status-text').style.color = (MODE==='TRIPIO') ? 'var(--tripio)' : 'var(--accent)';
 
         if (MODE === 'TRIPIO') {
-            d3.classList.add('hidden');
-            k3.classList.add('hidden');
-            bBG.classList.remove('hidden');
-            bEN.classList.remove('hidden');
-            hTxt.innerText = "(000 = Без код)";
+            d3.classList.add('hidden'); k3.classList.add('hidden');
+            bBG.classList.remove('hidden'); bEN.classList.remove('hidden');
             bBG.className = 'btn-lang' + (CFG.lang==='BG'?' active':'');
             bEN.className = 'btn-lang' + (CFG.lang==='EN'?' active':'');
         } else {
-            d3.classList.remove('hidden');
-            k3.classList.remove('hidden');
-            bBG.classList.add('hidden');
-            bEN.classList.add('hidden');
-            hTxt.innerText = "(0000 = Без код)";
+            d3.classList.remove('hidden'); k3.classList.remove('hidden');
+            bBG.classList.add('hidden'); bEN.classList.add('hidden');
         }
         filterInput(document.getElementById('inpText'));
     }
 
-    // --- Variables ---
+    // === Variables ===
     let ctx, source, analyzer, raf;
     let micStream = null;
     let isRx = false, isTx = false, isCalibrating = false; 
@@ -249,44 +561,81 @@
     let signalStart = 0; let signalFreqs = []; let buffer = []; let canvasX = 0;
     let rxTimeout = null; let currentRxBubbleId = null;
     let wakeLock = null;
+    let lastSignalTimestamp = 0; 
+    let isSessionStart = true;
+
+    // === UTILS ===
+    function intToBaseN(num, len, base) {
+        let s = num.toString(base);
+        while(s.length < len) s = "0" + s;
+        return s;
+    }
 
     // === UI ===
     function toggleMenu() { const m=document.getElementById('settingsMenu'); m.style.display=m.style.display==='flex'?'none':'flex'; if(m.style.display==='flex') loadToUI(); }
     function uiRef() { document.getElementById('lblThresh').innerText = document.getElementById('rngThresh').value + 'dB'; }
+    function uiRefSpeed() { document.getElementById('lblSpeed').innerText = document.getElementById('cfg_speed').value + '%'; }
     
-    // === INPUT FILTER ===
     function filterInput(el) {
-        let val = el.value;
-        if (MODE === 'TRIPIO') val = val.toUpperCase(); 
+        let val = el.value.toUpperCase(); 
         let clean = "";
         for (let char of val) {
-            if (ACTIVE_REV_MAP[char] !== undefined) clean += char;
+            if (ACTIVE_REV_MAP[char] !== undefined || char === ' ') clean += char;
         }
-        if (val !== clean || (MODE === 'TRIPIO' && el.value !== val)) {
-            el.value = clean;
-        }
+        if (el.value !== clean) el.value = clean;
     }
 
-    function addMessage(text, type) {
+    function addMessage(text, type, isHtml=false) {
         const chatWin = document.getElementById('chatWindow');
         const div = document.createElement('div'); div.className = `msg ${type}`;
         const msgId = 'msg-' + Date.now(); div.id = msgId;
-        const bubble = document.createElement('div'); bubble.className = 'bubble'; bubble.innerText = text;
+        const bubble = document.createElement('div'); bubble.className = 'bubble'; 
+        if(isHtml) bubble.innerHTML = text; else bubble.innerText = text;
         const btn = document.createElement('button'); btn.className = 'btn-replay'; btn.innerHTML = '↺';
         btn.onclick = () => { startTx(bubble.innerText); };
         div.appendChild(type === 'own' ? btn : bubble); div.appendChild(type === 'own' ? bubble : btn);
         chatWin.appendChild(div); chatWin.scrollTop = chatWin.scrollHeight;
         return msgId;
     }
-    function appendToRx(char) {
-        if (!currentRxBubbleId) currentRxBubbleId = addMessage("", "remote");
-        const bubble = document.querySelector(`#${currentRxBubbleId} .bubble`);
-        if(char === ' ') bubble.innerHTML += "&nbsp;"; else bubble.innerText += char;
-        const chatWin = document.getElementById('chatWindow'); chatWin.scrollTop = chatWin.scrollHeight;
-        clearTimeout(rxTimeout); rxTimeout = setTimeout(() => { currentRxBubbleId = null; }, 3000);
+    
+    let lastBubble = null; let bubbleTimer = null;
+    
+    function appendToRx(text, mode='text') {
+        if (!lastBubble) { 
+            const cw=document.getElementById('chatWindow'); 
+            const d=document.createElement('div'); d.className='msg remote'; 
+            const b=document.createElement('div'); b.className='bubble'; d.appendChild(b);
+            cw.appendChild(d); lastBubble=b; cw.scrollTop=cw.scrollHeight;
+            isSessionStart = true; 
+        }
+        
+        if (mode === 'new') {
+            if (text.length > 1) {
+                lastBubble.innerHTML += `<span class="word-new" onclick="addToDict(this, '${text}')">${text}</span>`;
+            } else {
+                lastBubble.innerHTML += text; 
+            }
+            isSessionStart = false;
+        } else if (mode === 'known') {
+            lastBubble.innerHTML += `<span class="word-known">${text}</span>`;
+            isSessionStart = false;
+        } else {
+            lastBubble.innerHTML += (text===' ' ? '&nbsp;' : text);
+        }
+        const cw=document.getElementById('chatWindow'); cw.scrollTop=cw.scrollHeight;
+        clearTimeout(bubbleTimer);
+        checkBubbleClosure();
     }
 
-    // === KEY LOGIC (FIXED: Preserves hidden state) ===
+
+    function checkBubbleClosure() {
+        clearTimeout(bubbleTimer);
+        bubbleTimer = setTimeout(() => {
+            const timeSinceSignal = Date.now() - lastSignalTimestamp;
+            if (timeSinceSignal < 1500) { checkBubbleClosure(); } else { lastBubble = null; isSessionStart = true; }
+        }, 500); 
+    }
+
     function rotateKey(idx) {
         CFG.key[idx] = (CFG.key[idx] + 1) % 4;
         updateKeyUI();
@@ -296,40 +645,40 @@
             const el = document.getElementById('k'+i);
             el.innerText = CFG.key[i];
             let cls = 'key-dot code-' + CFG.key[i];
-            // FIX: If we are in TRIPIO, force hide the 4th key (index 3)
-            if (MODE === 'TRIPIO' && i === 3) {
-                cls += ' hidden';
-            }
+            if (MODE === 'TRIPIO' && i === 3) cls += ' hidden';
             el.className = cls;
         }
     }
 
-    // === SETTINGS ===
     function loadToUI() {
         document.getElementById('cfg_fL').value = CFG.fL; 
         document.getElementById('cfg_fH').value = CFG.fH;
+        document.getElementById('cfg_speed').value = CFG.speed || 100;
+        uiRefSpeed();
         updateKeyUI();
         updateUIForMode();
     }
     function saveToMemory() {
         CFG.fL = parseInt(document.getElementById('cfg_fL').value); 
         CFG.fH = parseInt(document.getElementById('cfg_fH').value);
+        CFG.speed = parseInt(document.getElementById('cfg_speed').value);
         toggleMenu(); document.getElementById('statusLine').innerText = "SETTINGS SAVED";
     }
-    function resetDefaults() { CFG = { ...DEFAULT_CFG, key:[0,0,0,0] }; MODE='R2D2'; updateMaps(); loadToUI(); alert("Reset!"); }
-    // Removed exportCfg and importCfg functions
-
-    // === WAKE LOCK ===
-    async function requestWakeLock() {
-        if ('wakeLock' in navigator) {
-            try { wakeLock = await navigator.wakeLock.request('screen'); } catch (err) { console.error(err); }
-        }
+    function resetDefaults() { 
+        if(!confirm("Reset all settings?")) return;
+        CFG = { ...DEFAULT_CFG, key:[0,0,0,0] }; 
+        MODE='R2D2'; 
+        localStorage.removeItem('custom_maps');
+        initMaps();
+        updateMaps(); 
+        loadToUI(); 
     }
-    document.addEventListener('visibilitychange', async () => {
-        if (wakeLock !== null && document.visibilityState === 'visible') await requestWakeLock();
-    });
 
-    // === AUDIO CORE ===
+    async function requestWakeLock() {
+        if ('wakeLock' in navigator) { try { wakeLock = await navigator.wakeLock.request('screen'); } catch (err) { console.error(err); } }
+    }
+    document.addEventListener('visibilitychange', async () => { if (wakeLock !== null && document.visibilityState === 'visible') await requestWakeLock(); });
+
     function initCtx() { if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state === 'suspended') ctx.resume(); }
 
     async function startListening() {
@@ -352,6 +701,7 @@
         document.getElementById('statusLine').innerText = "PAUSED";
     }
     function toggleRxManual() { if(isRx) { stopListening(); document.getElementById('statusLine').innerText="RX OFF"; } else { startListening(); } }
+    
     function forceStopAll() {
         isTx=false; isRx=false; isCalibrating=false; cancelAnimationFrame(raf);
         document.getElementById('btnRx').classList.remove('listening');
@@ -359,7 +709,6 @@
         document.getElementById('btnCalTone').classList.remove('cal-sending');
     }
 
-    // === CALIBRATION ===
     async function startCalibrationTx() {
         if(isRx) stopListening(); if(isTx) forceStopAll();
         initCtx(); requestWakeLock(); isTx = true;
@@ -397,46 +746,135 @@
         cancelAnimationFrame(raf); startListening();
     }
 
-    // === TRANSMIT ===
     async function onSendClick() {
-        const txt = document.getElementById('inpText').value; if(!txt) return;
-        addMessage(txt, 'own'); document.getElementById('inpText').value = ''; await startTx(txt);
-    }
-    async function startTx(text) {
-        if(isTx) return; stopListening();
-        initCtx(); requestWakeLock(); isTx = true;
-        document.getElementById('statusLine').innerText = `TRANSMITTING ${MODE} >>`;
-        const fL = CFG.fL, fH = CFG.fH; 
-        const mod = 1; 
-        const tS = (CFG.tShort * mod) / 1000, tL = (CFG.tLong * mod) / 1000, tG = (CFG.tGap * mod) / 1000;
-        let t = ctx.currentTime + 0.1;
+        const inp = document.getElementById('inpText');
+        const txt = inp.value; if(!txt) return;
 
-        for (let char of text) {
-            if(!isTx) break; let code = ACTIVE_REV_MAP[char]; if (!code) continue;
+        let htmlContent = "";
+        const tokens = txt.split(/(\s+)/);
+        const curDict = DICT_SHARED;
 
-            let digitsToTransmit = [];
-            let isSpace = (code === '0'.repeat(CODE_LEN));
-
-            if (isSpace) {
-                for(let i=0; i<CODE_LEN; i++) digitsToTransmit.push('0');
+        for (let t of tokens) {
+            if(/^\s+$/.test(t)) {
+                htmlContent += t;
             } else {
-                for (let i=0; i<CODE_LEN; i++) {
-                    let rawVal = parseInt(code[i]);
-                    let keyVal = CFG.key[i];
-                    let encVal = (rawVal + keyVal) % 4;
-                    digitsToTransmit.push(encVal.toString());
+                let upper = t.toUpperCase();
+                if(!curDict.includes(upper) && t.length > 1) {
+                    htmlContent += `<span class="word-new" onclick="addToDict(this, '${upper}')">${t}</span>`;
+                } else if(curDict.includes(upper)) {
+                    htmlContent += `<span class="word-known">${t}</span>`;
+                } else {
+                    htmlContent += t; 
+                }
+            }
+        }
+        
+        addMessage(htmlContent, 'own', true); 
+        inp.value = '';
+        await startTx(txt);
+    }
+    
+    async function startTx(text) {
+        if(isTx) return; 
+        stopListening(); 
+        initCtx(); 
+        requestWakeLock(); 
+        isTx = true;
+        document.getElementById('statusLine').innerText = `TRANSMITTING ${MODE} >>`;
+
+        try {
+            const fL = CFG.fL, fH = CFG.fH; 
+            const mod = 100 / (CFG.speed || 100);
+            const tM = 1.0 * mod; 
+            const tS = (CFG.tShort * mod) / 1000;
+            const tL = (CFG.tLong * mod) / 1000; 
+            const tG = (CFG.tGap * mod) / 1000;
+            
+            let t = ctx.currentTime + 0.1;
+            const CUR_DICT = DICT_SHARED;
+            
+            schedTone(fH, t, tM); t += tM + tG;
+            const MAX_INDEX = Math.pow(4, CODE_LEN * 2);
+
+            const tokens = text.split(/(\s+)/);
+
+            for (let token of tokens) {
+                if(!isTx) break;
+                if(token.length === 0) continue;
+
+                if(/^\s+$/.test(token)) {
+                    schedTone(fH, t, tM); t += tM + tG;
+                    continue;
+                }
+
+                let uToken = token.toUpperCase();
+                let dictIdx = CUR_DICT.indexOf(uToken);
+
+                if (dictIdx !== -1 && dictIdx < MAX_INDEX) {
+                    let fullLen = CODE_LEN * 2;
+                    let fullId = intToBaseN(dictIdx, fullLen, 4);
+                    let p1 = fullId.substring(0, CODE_LEN);
+                    let p2 = fullId.substring(CODE_LEN, fullLen);
+                    
+                    await sendEncrypted(p1, t, fL, fH, tS, tL, tG); 
+                    t += calcDur(p1, tS, tL, tG);
+                    await sendEncrypted(p2, t, fL, fH, tS, tL, tG); 
+                    t += calcDur(p2, tS, tL, tG);
+                
+                } else {
+                    if(dictIdx >= MAX_INDEX) console.log("-> Index too high, spelling.");
+                    schedTone(fL, t, tM); t += tM + tG;
+                    
+                    if (token.length > 1) {
+                        for(let char of uToken) {
+                            let code = ACTIVE_REV_MAP[char];
+                            if(code) { 
+                                await sendEncrypted(code, t, fL, fH, tS, tL, tG); 
+                                t += calcDur(code, tS, tL, tG); 
+                            }
+                        }
+                    } else {
+                        let c = ACTIVE_REV_MAP[uToken[0]];
+                        if(c) { await sendEncrypted(c, t, fL, fH, tS, tL, tG); t += calcDur(c, tS, tL, tG); }
+                    }
+                    schedTone(fL, t, tM); t += tM + tG;
                 }
             }
 
-            for (let digit of digitsToTransmit) {
-                let f = (digit=='1'||digit=='3') ? fH : fL; let d = (digit=='2'||digit=='3') ? tL : tS;
-                schedTone(f, t, d); t += d + tG;
-                setTimeout(()=> highlightBuffer(digit), (t - ctx.currentTime)*1000);
-            }
-            t += tG;
+            let wait = (t - ctx.currentTime) * 1000; 
+            if (wait < 0) wait = 0; 
+            await new Promise(r => setTimeout(r, wait));
+
+        } catch(e) { console.error("Tx Error:", e); } finally { 
+            isTx = false; 
+            startListening(); 
         }
-        if(isTx) { let wait = (t - ctx.currentTime) * 1000; if (wait < 0) wait = 0; await new Promise(r => setTimeout(r, wait)); }
-        isTx = false; startListening();
+    }
+
+    function calcDur(code, tS, tL, tG) {
+        let d = 0; 
+        for(let i=0; i<code.length; i++) {
+            let raw = parseInt(code[i]);
+            let k = CFG.key[i % CFG.key.length];
+            let enc = (raw + k) % 4; 
+            let s = enc.toString();
+            d += ((s=='2'||s=='3')?tL:tS) + tG; 
+        } 
+        return d;
+    }
+
+    async function sendEncrypted(code, startT, fL, fH, tS, tL, tG) {
+        let t = startT;
+        for(let i=0; i<code.length; i++) {
+            let raw = parseInt(code[i]);
+            let k = CFG.key[i % CFG.key.length]; 
+            let enc = (raw + k) % 4; 
+            let dStr = enc.toString();
+            let f=(dStr=='1'||dStr=='3')?fH:fL; let dur=(dStr=='2'||dStr=='3')?tL:tS;
+            schedTone(f, t, dur); 
+            setTimeout(()=> highlightBuffer(dStr, false), (t - ctx.currentTime)*1000);
+            t += dur + tG;
+        }
     }
 
     function schedTone(f, t, d) {
@@ -448,6 +886,8 @@
     }
 
     // === RX LOOP ===
+    let toneDetected = false;
+
     function drawLoop() {
         if(!isRx && !isCalibrating) return;
         raf = requestAnimationFrame(drawLoop);
@@ -469,27 +909,45 @@
         let y = cvs.height - ((maxDb + 100) * 1.5); 
         c.fillStyle = isCalibrating ? '#ff3d00' : ((maxDb > thresh) ? '#0f0' : '#333');
         c.fillRect(canvasX, y, 2, 4);
-        let threshY = cvs.height - ((thresh + 100) * 1.5); c.fillStyle = '#555'; c.fillRect(canvasX, threshY, 2, 1);
         canvasX++;
 
         if (!isCalibrating && maxDb > thresh && freq > 300) {
+            lastSignalTimestamp = now;
             if (signalStart === 0) { signalStart = now; signalFreqs = []; }
             signalFreqs.push(freq);
+            let dur = now - signalStart;
+            
+            const mod = 100 / (CFG.speed || 100);
+            const markerThresh = 800 * mod;
+
+            if (dur > markerThresh) {
+                if (!toneDetected) {
+                    if (Math.abs(freq - CFG.fL) < 150) { 
+                        toneDetected = true; 
+                        toggleLearningMode(); 
+                    } 
+                    else if (Math.abs(freq - CFG.fH) < 150) { 
+                        toneDetected = true; 
+                        handleSpaceTone(); 
+                    }
+                }
+            }
+
         } else {
             if (!isCalibrating && signalStart > 0) {
                 let dur = now - signalStart;
-                if (dur > 50) {
+                if (dur > 50 && !toneDetected) {
                     let avgFreq = signalFreqs.reduce((a,b)=>a+b,0) / signalFreqs.length;
                     processSignal(dur, avgFreq);
                     c.fillStyle = '#fff'; c.fillRect(canvasX, 0, 1, cvs.height);
                 }
-                signalStart = 0;
+                signalStart = 0; toneDetected = false;
             }
         }
     }
 
     function processSignal(dur, freq) {
-        const mod = 1; 
+        const mod = 100 / (CFG.speed || 100);
         const currentShort = CFG.tShort * mod; const currentLong = CFG.tLong * mod;
         const splitTime = (currentShort + currentLong) / 2;
         let isHigh = Math.abs(freq - CFG.fH) < Math.abs(freq - CFG.fL);
@@ -500,33 +958,72 @@
         if (digit) pushBuffer(digit);
     }
 
-    let bufTimer;
+    let bufTimer; let isLearning = false; let learnBuffer = [];
+    let idBuffer = []; 
+
+    function toggleLearningMode() {
+        isLearning = !isLearning; 
+        buffer = []; idBuffer = []; 
+        
+        if(isLearning) { 
+            learnBuffer = []; 
+            document.getElementById('statusLine').innerText = "RX: SPELLING..."; 
+            highlightMode('code-new'); 
+        } 
+        else {
+            if(learnBuffer.length > 0) { let w = learnBuffer.join(''); appendToRx(w, 'new'); }
+            document.getElementById('statusLine').innerText = "RX: ID MODE"; 
+            highlightMode('code-new');
+        }
+    }
+
+    function handleSpaceTone() {
+        if (isLearning && learnBuffer.length > 0) { 
+            let w = learnBuffer.join(''); appendToRx(w, 'new'); learnBuffer = []; isLearning = false; 
+        }
+        if (isSessionStart) { isSessionStart = false; } else { appendToRx(" "); }
+        
+        buffer = []; idBuffer = [];
+        document.getElementById('statusLine').innerText = "RX: SPACE"; 
+        highlightMode('code-1'); 
+    }
+
     function pushBuffer(d) {
         clearTimeout(bufTimer); buffer.push(d); updateIndicators(); 
         
         if(buffer.length === CODE_LEN) {
-            let receivedCode = "";
-            let isSpace = (buffer.join('') === '0'.repeat(CODE_LEN));
-
-            if (isSpace) {
-                receivedCode = '0'.repeat(CODE_LEN);
-            } else {
-                for(let i=0; i<CODE_LEN; i++) {
-                    let recVal = parseInt(buffer[i]);
-                    let keyVal = CFG.key[i];
-                    let origVal = (recVal - keyVal + 4) % 4;
-                    receivedCode += origVal.toString();
-                }
+            let decCode = "";
+            for(let i=0; i<CODE_LEN; i++) {
+                let r = parseInt(buffer[i]); 
+                let k = CFG.key[i % CFG.key.length];
+                let orig = (r - k + 4) % 4; 
+                decCode += orig.toString();
             }
 
-            let char = ACTIVE_MAP[receivedCode] || '?';
-            appendToRx(char); setTimeout(()=>{ buffer=[]; updateIndicators(); }, 100);
+            if (isLearning) {
+                let char = ACTIVE_MAP[decCode];
+                if(char) learnBuffer.push(char);
+                buffer = []; 
+            } else {
+                idBuffer.push(decCode);
+                
+                if (idBuffer.length === 2) {
+                    let fullId = idBuffer.join('');
+                    let idx = parseInt(fullId, 4);
+                    let dict = DICT_SHARED;
+                    let w = dict[idx] || `<ERR:${idx}>`;
+                    appendToRx(w, 'known');
+                    idBuffer = []; 
+                }
+                buffer = [];
+            }
         } else { 
-            const mod = 1;
+            const mod = 100 / (CFG.speed || 100);
             const safeWait = (CFG.tLong + CFG.tGap) * mod * 2;
             bufTimer = setTimeout(()=>{ buffer=[]; updateIndicators(); }, safeWait); 
         }
     }
+    
     function updateIndicators() {
         for(let i=0; i<4; i++) {
             let el = document.getElementById('d'+i);
@@ -535,15 +1032,58 @@
             el.innerText = v || '';
         }
     }
-    function highlightBuffer(d) {
-        const el = document.getElementById('d0'); el.className = 'dot code-'+d; el.innerText = d;
+    function highlightBuffer(d, isMarker) {
+        const el = document.getElementById('d0'); 
+        el.className = 'dot code-'+d + (isMarker ? ' code-new' : ''); 
+        el.innerText = d;
         setTimeout(()=> { el.className='dot'; el.innerText=''; }, 100);
     }
+    function highlightMode(cls) {
+        const dots = document.querySelectorAll('.dot');
+        dots.forEach(d => d.classList.add(cls));
+        setTimeout(() => dots.forEach(d => d.classList.remove(cls)), 400);
+    }
+    
+    (function initSafeInput() {
+    const inp = document.getElementById('inpText');
+    if (!inp) return;
 
+    inp.addEventListener('beforeinput', (e) => {
+        if (e.isComposing) return;   
+        if (!e.data) return;         
+
+        const ch = e.data.toUpperCase();
+        if (ch === ' ') return;      
+
+        if (ACTIVE_REV_MAP[ch] === undefined) {
+            e.preventDefault();      
+            return;
+        }
+
+        e.preventDefault();
+        const el = e.target;
+        el.setRangeText(ch, el.selectionStart, el.selectionEnd, 'end');
+    });
+
+    inp.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const text = e.clipboardData.getData('text').toUpperCase();
+        let clean = '';
+        for (const ch of text) {
+            if (ch === ' ' || ACTIVE_REV_MAP[ch] !== undefined) {
+                clean += ch;
+            }
+        }
+        const el = e.target;
+        el.setRangeText(clean, el.selectionStart, el.selectionEnd, 'end');
+    });
+})(); 
     window.onload = function() {
+        initDicts();
+        initMaps(); // Load custom maps or defaults
         updateMaps();
         startListening();
-        addMessage("Добре дошъл в R2D2-chat", 'remote');
+        addMessage("Welcome to Droid-Chat", 'remote');
         document.body.addEventListener('click', () => { 
             if(ctx && ctx.state==='suspended') ctx.resume(); 
             requestWakeLock();
